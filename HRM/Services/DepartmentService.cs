@@ -66,6 +66,7 @@ namespace HRM.Services
             d.Description = dto.Description;
             d.IsActive = dto.IsActive;
 
+            _context.Departments.Update(d);
             await _context.SaveChangesAsync();
             return true;
         }

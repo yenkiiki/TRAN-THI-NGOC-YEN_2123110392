@@ -17,28 +17,28 @@ namespace HRM.Services
 
         public async Task<IEnumerable<PositionDto>> GetAllAsync()
         {
-            return await _context.Set<Position>()
+            return await _context.Positions
                 .Select(p => new PositionDto
                 {
                     Id = p.Id,
-                    TenChucVu = p.TenChucVu,
-                    MoTa = p.MoTa,
-                    HoatDong = p.HoatDong
+                    PositionName = p.PositionName,
+                    Description = p.Description,
+                    IsActive = p.IsActive
                 })
                 .ToListAsync();
         }
 
         public async Task<PositionDto?> GetByIdAsync(int id)
         {
-            var p = await _context.Set<Position>().FindAsync(id);
+            var p = await _context.Positions.FindAsync(id);
             if (p == null) return null;
 
             return new PositionDto
             {
                 Id = p.Id,
-                TenChucVu = p.TenChucVu,
-                MoTa = p.MoTa,
-                HoatDong = p.HoatDong
+                PositionName = p.PositionName,
+                Description = p.Description,
+                IsActive = p.IsActive
             };
         }
 
@@ -46,12 +46,12 @@ namespace HRM.Services
         {
             var position = new Position
             {
-                TenChucVu = dto.TenChucVu,
-                MoTa = dto.MoTa,
-                HoatDong = dto.HoatDong
+                PositionName = dto.PositionName,
+                Description = dto.Description,
+                IsActive = dto.IsActive
             };
 
-            _context.Set<Position>().Add(position);
+            _context.Positions.Add(position);
             await _context.SaveChangesAsync();
 
             dto.Id = position.Id;
@@ -60,12 +60,12 @@ namespace HRM.Services
 
         public async Task<bool> UpdateAsync(int id, PositionDto dto)
         {
-            var p = await _context.Set<Position>().FindAsync(id);
+            var p = await _context.Positions.FindAsync(id);
             if (p == null) return false;
 
-            p.TenChucVu = dto.TenChucVu;
-            p.MoTa = dto.MoTa;
-            p.HoatDong = dto.HoatDong;
+            p.PositionName = dto.PositionName;
+            p.Description = dto.Description;
+            p.IsActive = dto.IsActive;
 
             await _context.SaveChangesAsync();
             return true;
@@ -73,10 +73,10 @@ namespace HRM.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var p = await _context.Set<Position>().FindAsync(id);
+            var p = await _context.Positions.FindAsync(id);
             if (p == null) return false;
 
-            _context.Set<Position>().Remove(p);
+            _context.Positions.Remove(p);
             await _context.SaveChangesAsync();
             return true;
         }

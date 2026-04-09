@@ -3,8 +3,8 @@
     public class Position
     {
         public int Id { get; set; }
-        public string TenChucVu { get; set; } 
-        public string MoTa { get; set; } 
-        public bool HoatDong { get; set; } = true; 
+        public string PositionName { get; set; }
+        public string Description { get; set; }
+        public bool IsActive { get; set; } = true;
     }
 }
