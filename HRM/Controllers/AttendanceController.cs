@@ -2,65 +2,54 @@
 using HRM.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace HRM.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // 🔐 Chặn mọi hành vi chấm công nếu chưa login
+    [Authorize]
     public class AttendanceController : ControllerBase
     {
         private readonly IAttendanceService _service;
+        public AttendanceController(IAttendanceService service) => _service = service;
 
-        public AttendanceController(IAttendanceService service)
+        [HttpPost("check-in")]
+        [Authorize] // ✅ Employee dùng cái này
+        public async Task<IActionResult> CheckIn()
         {
-            _service = service;
+            var empId = GetEmployeeIdFromToken();
+            if (empId == 0) return BadRequest(new { message = "Tài khoản chưa liên kết nhân viên" });
+            var result = await _service.CheckInAsync(empId);
+            return result.Contains("thành công") ? Ok(new { message = result }) : BadRequest(new { message = result });
         }
 
-        [HttpPost("checkin/{employeeId}")]
-        public async Task<IActionResult> CheckIn(int employeeId)
+        [HttpPost("check-out")]
+        [Authorize] // ✅ Employee dùng cái này
+        public async Task<IActionResult> CheckOut()
         {
-            var result = await _service.CheckInAsync(employeeId);
-            if (!result) return BadRequest(new { message = "Hôm nay bạn đã chấm công rồi hoặc nhân viên không tồn tại" });
-            return Ok(new { message = "Check-in thành công!" });
-        }
-
-        [HttpPost("checkout/{employeeId}")]
-        public async Task<IActionResult> CheckOut(int employeeId)
-        {
-            var result = await _service.CheckOutAsync(employeeId);
-            if (!result) return BadRequest(new { message = "Không tìm thấy dữ liệu Check-in hoặc bạn đã Check-out rồi" });
-            return Ok(new { message = "Check-out thành công!" });
+            var empId = GetEmployeeIdFromToken();
+            if (empId == 0) return BadRequest(new { message = "Tài khoản chưa liên kết nhân viên" });
+            var result = await _service.CheckOutAsync(empId);
+            return result.Contains("thành công") ? Ok(new { message = result }) : BadRequest(new { message = result });
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            return Ok(await _service.GetAllAsync());
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var data = await _service.GetByIdAsync(id);
-            if (data == null) return NotFound();
-            return Ok(data);
-        }
+        [Authorize(Roles = "Admin,HR")] // 🔐 Chỉ Admin/HR mới xem được bảng công tổng
+        public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,HR")] // 🔐 Nhân viên không được tự sửa giờ làm
         public async Task<IActionResult> Update(int id, AttendanceUpdateDto dto)
         {
             var result = await _service.UpdateAsync(id, dto);
-            if (!result) return BadRequest("Cập nhật thất bại");
-            return Ok(new { message = "Cập nhật thành công" });
+            return result ? Ok(new { message = "Cập nhật thành công" }) : BadRequest("Cập nhật thất bại");
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        private int GetEmployeeIdFromToken()
         {
-            var result = await _service.DeleteAsync(id);
-            if (!result) return NotFound();
-            return Ok(new { message = "Xóa dữ liệu thành công" });
+            var claim = User.FindFirst("EmployeeId")?.Value;
+            return int.TryParse(claim, out int id) ? id : 0;
         }
     }
 }

@@ -22,6 +22,7 @@ namespace HRM.Services
                 {
                     Id = p.Id,
                     PositionName = p.PositionName,
+                    BaseSalary = p.BaseSalary, // Mày thiếu dòng này nè!
                     Description = p.Description,
                     IsActive = p.IsActive
                 })
@@ -37,6 +38,7 @@ namespace HRM.Services
             {
                 Id = p.Id,
                 PositionName = p.PositionName,
+                BaseSalary = p.BaseSalary, // Mày cũng thiếu dòng này nè!
                 Description = p.Description,
                 IsActive = p.IsActive
             };
@@ -47,13 +49,12 @@ namespace HRM.Services
             var position = new Position
             {
                 PositionName = dto.PositionName,
+                BaseSalary = dto.BaseSalary, // Chỗ này mày làm đúng rồi
                 Description = dto.Description,
                 IsActive = dto.IsActive
             };
-
             _context.Positions.Add(position);
             await _context.SaveChangesAsync();
-
             dto.Id = position.Id;
             return dto;
         }
@@ -64,6 +65,7 @@ namespace HRM.Services
             if (p == null) return false;
 
             p.PositionName = dto.PositionName;
+            p.BaseSalary = dto.BaseSalary; // Phải có dòng này thì mới cập nhật lương được!
             p.Description = dto.Description;
             p.IsActive = dto.IsActive;
 

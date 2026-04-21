@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
-using HRM.Data;
+﻿using HRM.Data;
 using HRM.Interfaces;
 using HRM.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+// ... giữ nguyên đoạn trên
 .AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = false;
@@ -48,7 +50,10 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtIssuer,
         ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-        ClockSkew = TimeSpan.Zero // Token hết hạn là cook luôn, không chờ đợi
+        ClockSkew = TimeSpan.Zero,
+
+        // 🔑 THÊM DÒNG NÀY VÀO ĐÂY:
+        RoleClaimType = ClaimTypes.Role
     };
 });
 

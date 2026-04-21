@@ -15,35 +15,40 @@ namespace HRM.Services
             _context = context;
         }
 
-        public async Task<bool> CheckInAsync(int employeeId)
+        public async Task<string> CheckInAsync(int employeeId)
         {
-            var now = DateTime.Now; // 🕒 Lấy giờ thực tế máy tính
+            var now = DateTime.Now;
             var today = now.Date;
 
-            // Kiểm tra xem nhân viên có tồn tại không
-            var employeeExists = await _context.Employees.AnyAsync(e => e.Id == employeeId);
-            if (!employeeExists) return false;
+            // 1. Kiểm tra nhân viên
+            var employee = await _context.Employees.FindAsync(employeeId);
+            if (employee == null) return "Nhân viên không tồn tại!";
+            if (employee.Status != "Active") return "Nhân viên này không còn hoạt động!";
 
-            // Kiểm tra xem hôm nay đã check-in chưa
+            // 2. Kiểm tra xem đã check-in chưa
             var exists = await _context.Attendances
                 .AnyAsync(x => x.EmployeeId == employeeId && x.Date == today);
-            if (exists) return false;
+            if (exists) return "Bạn đã Check-in hôm nay rồi!";
+
+            // 3. Logic trạng thái
+            var lateThreshold = new TimeSpan(8, 30, 0);
+            var status = now.TimeOfDay <= lateThreshold ? "Present" : "Late";
 
             var newAttendance = new Attendance
             {
                 EmployeeId = employeeId,
                 Date = today,
                 CheckIn = now,
-                Status = now.Hour < 8 ? "Present" : "Late", // Trước 8h là Present, sau 8h là Trễ
+                Status = status,
                 CreatedAt = now
             };
 
             _context.Attendances.Add(newAttendance);
             await _context.SaveChangesAsync();
-            return true;
+            return "Check-in thành công!";
         }
 
-        public async Task<bool> CheckOutAsync(int employeeId)
+        public async Task<string> CheckOutAsync(int employeeId)
         {
             var now = DateTime.Now;
             var today = now.Date;
@@ -51,20 +56,25 @@ namespace HRM.Services
             var attendance = await _context.Attendances
                 .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && x.Date == today);
 
-            if (attendance == null || attendance.CheckOut != null) return false;
+            if (attendance == null) return "Bạn chưa Check-in sáng nay!";
+            if (attendance.CheckOut != null) return "Bạn đã Check-out rồi!";
 
             attendance.CheckOut = now;
             attendance.UpdatedAt = now;
 
-            if (attendance.CheckIn != null)
+            if (attendance.CheckIn.HasValue)
             {
-                // Tính số giờ làm việc (định dạng số thập phân, ví dụ: 8.5 giờ)
-                attendance.WorkHours = Math.Round((attendance.CheckOut.Value - attendance.CheckIn.Value).TotalHours, 2);
+                var duration = now - attendance.CheckIn.Value;
+                double totalHours = duration.TotalHours;
+                if (totalHours > 5) totalHours -= 1; // Nghỉ trưa
+                attendance.WorkHours = Math.Round(totalHours, 2);
             }
 
             await _context.SaveChangesAsync();
-            return true;
+            return "Check-out thành công!";
         }
+
+        // --- Các hàm bên dưới giữ nguyên kiểu trả về vì nó đã khớp ---
 
         public async Task<List<AttendanceResponseDto>> GetAllAsync()
         {

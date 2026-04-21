@@ -43,11 +43,13 @@ namespace HRM.Services
             var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
 
             var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role ?? "User"),
-                new Claim("UserId", user.Id.ToString())
-            };
+    {
+        new Claim(ClaimTypes.Name, user.Username),
+        new Claim(ClaimTypes.Role, user.Role),
+        new Claim("UserId", user.Id.ToString()),
+        // 🔗 Thêm EmployeeId vào claim nếu có
+        new Claim("EmployeeId", user.EmployeeId?.ToString() ?? "0")
+    };
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
@@ -68,26 +70,37 @@ namespace HRM.Services
         // ================= REGISTER =================
         public async Task<bool> RegisterAsync(RegisterDto dto)
         {
-            var exists = await _context.Users
-                .AnyAsync(x => x.Username == dto.Username);
-
-            if (exists)
+            // 1. Kiểm tra username tồn tại chưa
+            if (await _context.Users.AnyAsync(x => x.Username == dto.Username))
                 return false;
+
+            // 2. Nếu có truyền EmployeeId, kiểm tra nhân viên đó đã có tài khoản chưa (Logic 1-1)
+            if (dto.EmployeeId.HasValue)
+            {
+                var alreadyHasAccount = await _context.Users
+                    .AnyAsync(x => x.EmployeeId == dto.EmployeeId);
+
+                if (alreadyHasAccount)
+                    throw new Exception("Nhân viên này đã được cấp tài khoản rồi!");
+
+                // Kiểm tra nhân viên có tồn tại không
+                var employeeExists = await _context.Employees.AnyAsync(e => e.Id == dto.EmployeeId);
+                if (!employeeExists)
+                    throw new Exception("Mã nhân viên không tồn tại!");
+            }
 
             var user = new User
             {
                 Username = dto.Username,
                 PasswordHash = HashPassword(dto.Password),
-                Role = dto.Role ?? "User",
+                Role = dto.Role,
                 EmployeeId = dto.EmployeeId
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-
             return true;
         }
-
         // ================= GET ALL USERS =================
         public async Task<List<UserDto>> GetAllUsersAsync()
         {

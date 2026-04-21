@@ -1,23 +1,18 @@
-﻿using System;
-
-namespace HRM.DTOs
+﻿namespace HRM.DTOs
 {
     public class SalaryDTO
     {
         public int Id { get; set; }
         public int EmployeeId { get; set; }
+        public string? FullName { get; set; } // Để hiển thị lên Swagger/UI
 
-        // Employee info
-        public string? FullName { get; set; }
-        public string? Email { get; set; }
-        public string? Phone { get; set; }
+        public int Month { get; set; }
+        public int Year { get; set; }
 
-        // Salary info
         public decimal BaseSalary { get; set; }
         public decimal Bonus { get; set; }
         public decimal Allowance { get; set; }
         public decimal TotalSalary { get; set; }
-
         public DateTime EffectiveDate { get; set; }
     }
 }

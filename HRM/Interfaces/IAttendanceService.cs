@@ -4,8 +4,9 @@ namespace HRM.Interfaces
 {
     public interface IAttendanceService
     {
-        Task<bool> CheckInAsync(int employeeId);
-        Task<bool> CheckOutAsync(int employeeId);
+        // 🛠️ Sửa Task<bool> thành Task<string> để khớp với Service
+        Task<string> CheckInAsync(int employeeId);
+        Task<string> CheckOutAsync(int employeeId);
 
         Task<List<AttendanceResponseDto>> GetAllAsync();
         Task<AttendanceResponseDto> GetByIdAsync(int id);

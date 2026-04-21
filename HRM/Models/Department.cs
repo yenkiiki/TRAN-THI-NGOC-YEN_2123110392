@@ -2,9 +2,12 @@
 {
     public class Department
     {
-        public int Id { get; set; } // auto increment
-        public string DepartmentName { get; set; }
-        public string Description { get; set; }
+        public int Id { get; set; }
+        public string DepartmentName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+
+        // Liên kết ngược lại (1 phòng nhiều NV)
+        public virtual ICollection<Employee>? Employees { get; set; }
     }
 }

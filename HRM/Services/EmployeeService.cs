@@ -18,6 +18,8 @@ namespace HRM.Services
         public async Task<IEnumerable<EmployeeDTO>> GetAll()
         {
             return await _context.Employees
+                .Include(e => e.Department)
+                .Include(e => e.Position) // 🔗 Join thêm bảng Position
                 .Select(e => new EmployeeDTO
                 {
                     Id = e.Id,
@@ -28,14 +30,22 @@ namespace HRM.Services
                     Gender = e.Gender,
                     Address = e.Address,
                     HireDate = e.HireDate,
-                    Status = e.Status
+                    Status = e.Status,
+                    DepartmentId = e.DepartmentId,
+                    DepartmentName = e.Department != null ? e.Department.DepartmentName : "N/A",
+                    PositionId = e.PositionId,
+                    PositionName = e.Position != null ? e.Position.PositionName : "N/A"
                 })
                 .ToListAsync();
         }
 
         public async Task<EmployeeDTO?> GetById(int id)
         {
-            var emp = await _context.Employees.FindAsync(id);
+            var emp = await _context.Employees
+                .Include(e => e.Department)
+                .Include(e => e.Position)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
             if (emp == null) return null;
 
             return new EmployeeDTO
@@ -48,7 +58,11 @@ namespace HRM.Services
                 Gender = emp.Gender,
                 Address = emp.Address,
                 HireDate = emp.HireDate,
-                Status = emp.Status
+                Status = emp.Status,
+                DepartmentId = emp.DepartmentId,
+                DepartmentName = emp.Department?.DepartmentName,
+                PositionId = emp.PositionId,
+                PositionName = emp.Position?.PositionName
             };
         }
 
@@ -63,7 +77,9 @@ namespace HRM.Services
                 Gender = dto.Gender,
                 Address = dto.Address,
                 HireDate = dto.HireDate,
-                Status = dto.Status
+                Status = dto.Status,
+                DepartmentId = dto.DepartmentId,
+                PositionId = dto.PositionId // 🔗 Lưu ID chức vụ
             };
 
             _context.Employees.Add(emp);
@@ -86,6 +102,8 @@ namespace HRM.Services
             emp.Address = dto.Address;
             emp.HireDate = dto.HireDate;
             emp.Status = dto.Status;
+            emp.DepartmentId = dto.DepartmentId;
+            emp.PositionId = dto.PositionId; // 🔗 Cập nhật chức vụ mới
 
             await _context.SaveChangesAsync();
             return true;
